@@ -1,20 +1,62 @@
 // jkcoxson
+// + stossy11
+
+fn cowsay_native(message: &str) -> Vec<String> {
+    let length = message.lines().map(|l| l.len()).max().unwrap_or(0);
+    let top = format!(" {}", "-".repeat(length + 2));
+    let bottom = top.clone();
+
+    let lines: Vec<&str> = message.lines().collect();
+    let middle: Vec<String> = if lines.len() > 1 {
+        lines
+            .iter()
+            .enumerate()
+            .map(|(i, line)| {
+                if i == 0 {
+                    format!("/ {:width$} \\", line, width = length)
+                } else if i == lines.len() - 1 {
+                    format!("\\ {:width$} /", line, width = length)
+                } else {
+                    format!("| {:width$} |", line, width = length)
+                }
+            })
+            .collect()
+    } else {
+        vec![format!("< {:width$} >", message, width = length)]
+    };
+
+
+    let cow = vec![
+        String::from("        \\   ^__^"),
+        String::from("         \\  (oo)\\_______"),
+        String::from("            (__)\\       )\\/\\"),
+        String::from("                ||----w |"),
+        String::from("                ||     ||"),
+    ];
+
+    let mut result = Vec::new();
+    result.push(top);
+    result.extend(middle);
+    result.push(bottom);
+    result.extend(cow);
+    result
+}
 
 fn main() {
-    // Get arguments
     let args: Vec<String> = std::env::args().collect();
-    let recursions = args[1].parse::<i32>().unwrap();
-    let mut to_run = "echo \"RECURSION\" ".to_string();
+    let recursions = args
+        .get(1)
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(1);
+
+    let mut current_output = vec!["RECURSION".to_string()];
+
     for _ in 0..recursions {
-        to_run = format!("{} | cowsay -n ", to_run).to_string();
+        let input = current_output.join("\n");
+        current_output = cowsay_native(&input);
     }
-    // Run the command
-    let output = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(to_run)
-        .stdout(std::process::Stdio::piped())
-        .output()
-        .expect("failed to execute process");
-    // Print the output
-    println!("{}", String::from_utf8_lossy(&output.stdout));
+
+    for line in current_output {
+        println!("{}", line);
+    }
 }
